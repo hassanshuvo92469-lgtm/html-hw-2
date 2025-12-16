@@ -1,64 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Personal Finance Tracker</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app">
-    <section class="hero">
-      <header>
-        <p class="tag">Budget Tracker</p>
-        <h1>Keep your money organized</h1>
-        <p class="lead">Log every income and expense to always know where your money goes.</p>
-      </header>
-
-      <article class="balance-card">
-        <p class="label">Current Balance</p>
-        <p class="balance" id="balance">$0.00</p>
-        <div class="totals">
-          <div>
-            <p class="label">Income</p>
-            <p class="income" id="income">$0.00</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Finance Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="phone">
+        <header class="phone__header">
+          <button class="icon-button" aria-label="Open navigation">
+            <span>&#x2190;</span>
+          </button>
+          <div class="month-pill">
+            <span class="month-label">Expenses</span>
+            <strong id="current-month"></strong>
           </div>
+          <button class="icon-button" aria-label="Open filters">
+            <span>&#x1F5D2;</span>
+          </button>
+        </header>
+
+        <section class="balance-card">
           <div>
-            <p class="label">Expenses</p>
-            <p class="expense" id="expenses">$0.00</p>
+            <p class="label">Current Balance</p>
+            <p class="balance" id="balance">$0.00</p>
           </div>
-        </div>
-      </article>
-    </section>
+          <div class="totals">
+            <div>
+              <p class="label">Income</p>
+              <p class="income" id="income">$0.00</p>
+            </div>
+            <div>
+              <p class="label">Expenses</p>
+              <p class="expense" id="expenses">$0.00</p>
+            </div>
+          </div>
+        </section>
 
-    <section class="panel">
-      <form id="transaction-form" autocomplete="off">
-        <h2>Add a transaction</h2>
-        <label>
-          Description
-          <input type="text" id="description" placeholder="e.g. Freelance work" required />
-        </label>
-        <label>
-          Amount ($)
-          <input type="number" id="amount" placeholder="e.g. 120" step="0.01" required />
-        </label>
-        <label>
-          Type
-          <select id="type" required>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-        </label>
-        <button type="submit">Add Transaction</button>
-      </form>
+        <section class="chart-card">
+          <header class="chart-card__header">
+            <div>
+              <p class="label">Daily Expense</p>
+              <h2>Spending overview</h2>
+            </div>
+            <span class="chip">View All</span>
+          </header>
+          <div class="chart-wrapper">
+            <div class="donut-chart" id="donut-chart">
+              <div class="donut-center">
+                <p class="label">Expenses</p>
+                <strong id="chart-total">$0.00</strong>
+              </div>
+            </div>
+            <ul class="legend" id="chart-legend" aria-live="polite"></ul>
+          </div>
+        </section>
 
-      <section class="transactions">
-        <h2>Recent activity</h2>
-        <ul id="transaction-list" aria-live="polite"></ul>
+        <section class="transactions">
+          <header class="transactions__header">
+            <h3>Recent Activity</h3>
+            <span class="chip muted">Today</span>
+          </header>
+          <ul id="transaction-list" aria-live="polite"></ul>
+        </section>
       </section>
-    </section>
-  </main>
 
-  <script src="script.js"></script>
-</body>
+      <section class="panel">
+        <form id="transaction-form" autocomplete="off">
+          <h2>Add a transaction</h2>
+          <label>
+            Description
+            <input
+              type="text"
+              id="description"
+              placeholder="e.g. Freelance work"
+              required
+            />
+          </label>
+          <label>
+            Amount ($)
+            <input
+              type="number"
+              id="amount"
+              placeholder="e.g. 120"
+              step="0.01"
+              required
+            />
+          </label>
+          <label>
+            Category
+            <select id="category" required>
+              <option value="transportation">Transportation</option>
+              <option value="food">Food &amp; Drink</option>
+              <option value="shopping">Shopping</option>
+              <option value="travel">Travelling</option>
+              <option value="personal">Personal Care</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>
+            Type
+            <select id="type" required>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </label>
+          <button type="submit">Save Transaction</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
 </html>
