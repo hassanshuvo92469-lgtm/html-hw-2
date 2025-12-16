@@ -68,6 +68,17 @@
       </section>
 
       <section class="panel">
+        <div class="control-card">
+          <h2>Preferences</h2>
+          <label>
+            Currency
+            <select id="currency-select">
+              <option value="usd">USA (USD)</option>
+              <option value="eur">Europe (EUR)</option>
+              <option value="gbp">London (GBP)</option>
+            </select>
+          </label>
+        </div>
         <form id="transaction-form" autocomplete="off">
           <h2>Add a transaction</h2>
           <label>
@@ -80,7 +91,7 @@
             />
           </label>
           <label>
-            Amount ($)
+            Amount
             <input
               type="number"
               id="amount"

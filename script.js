@@ -1,4 +1,5 @@
 const STORAGE_KEY = "pf-tracker-transactions";
+const CURRENCY_KEY = "pf-tracker-currency";
 
 const categories = {
   transportation: { label: "Transportation", icon: "🚌", color: "#f97316" },
@@ -9,11 +10,33 @@ const categories = {
   other: { label: "Other", icon: "💸", color: "#22d3ee" },
 };
 
+const currencyOptions = {
+  usd: {
+    label: "USA (USD)",
+    currency: "USD",
+    locale: "en-US",
+    rate: 1,
+  },
+  eur: {
+    label: "Europe (EUR)",
+    currency: "EUR",
+    locale: "de-DE",
+    rate: 0.92,
+  },
+  gbp: {
+    label: "London (GBP)",
+    currency: "GBP",
+    locale: "en-GB",
+    rate: 0.79,
+  },
+};
+
 const form = document.getElementById("transaction-form");
 const descriptionInput = document.getElementById("description");
 const amountInput = document.getElementById("amount");
 const typeInput = document.getElementById("type");
 const categoryInput = document.getElementById("category");
+const currencySelect = document.getElementById("currency-select");
 const list = document.getElementById("transaction-list");
 const balanceEl = document.getElementById("balance");
 const incomeEl = document.getElementById("income");
@@ -24,6 +47,9 @@ const chartTotalEl = document.getElementById("chart-total");
 const legendEl = document.getElementById("chart-legend");
 
 let transactions = [];
+let currentCurrencyKey = "usd";
+let currentCurrency = currencyOptions[currentCurrencyKey];
+let currencyFormatter = createCurrencyFormatter(currentCurrency);
 
 init();
 
@@ -40,10 +66,12 @@ form.addEventListener("submit", (event) => {
     return;
   }
 
+  const normalizedAmount = convertToBase(amountValue);
+
   const transaction = {
     id: Date.now(),
     description,
-    amount: amountValue,
+    amount: normalizedAmount,
     type,
     category,
     createdAt: new Date().toISOString(),
@@ -57,9 +85,25 @@ form.addEventListener("submit", (event) => {
   typeInput.value = "income";
 });
 
+if (currencySelect) {
+  currencySelect.addEventListener("change", (event) => {
+    setCurrency(event.target.value);
+  });
+}
+
 function init() {
   const saved = localStorage.getItem(STORAGE_KEY);
   transactions = saved ? parseStoredTransactions(saved) : [];
+
+  const savedCurrency = localStorage.getItem(CURRENCY_KEY);
+  if (savedCurrency && currencyOptions[savedCurrency]) {
+    setCurrency(savedCurrency, { skipPersist: true, skipRender: true });
+    if (currencySelect) {
+      currencySelect.value = savedCurrency;
+    }
+  } else if (currencySelect) {
+    currencySelect.value = currentCurrencyKey;
+  }
 
   if (monthEl) {
     const now = new Date();
@@ -109,6 +153,11 @@ function renderTransactions() {
     const categoryMeta = categories[transaction.category] || categories.other;
     const dateStamp = formatDate(transaction.createdAt || transaction.id);
 
+    const amountText =
+      transaction.type === "income"
+        ? formatCurrency(transaction.amount, { sign: "positive" })
+        : formatCurrency(transaction.amount, { sign: "negative" });
+
     li.innerHTML = `
       <div class="transaction-meta">
         <span class="icon" style="background:${categoryMeta.color}">${categoryMeta.icon}</span>
@@ -117,9 +166,7 @@ function renderTransactions() {
           <small>${categoryMeta.label} · ${dateStamp}</small>
         </div>
       </div>
-      <span class="amount ${transaction.type}">
-        ${transaction.type === "income" ? "+" : "-"}${formatCurrency(transaction.amount)}
-      </span>
+      <span class="amount ${transaction.type}">${amountText}</span>
     `;
 
     list.appendChild(li);
@@ -131,9 +178,9 @@ function updateTotals() {
   const expenseTotal = sumByType("expense");
   const balance = incomeTotal - expenseTotal;
 
-  incomeEl.textContent = `$${formatCurrency(incomeTotal)}`;
-  expensesEl.textContent = `$${formatCurrency(expenseTotal)}`;
-  balanceEl.textContent = `$${formatCurrency(balance)}`;
+  incomeEl.textContent = formatCurrency(incomeTotal);
+  expensesEl.textContent = formatCurrency(expenseTotal);
+  balanceEl.textContent = formatCurrency(balance);
 }
 
 function sumByType(type) {
@@ -156,7 +203,7 @@ function updateChart() {
   });
 
   const totalExpense = expenses.reduce((sum, item) => sum + item.amount, 0);
-  chartTotalEl.textContent = `$${formatCurrency(totalExpense)}`;
+  chartTotalEl.textContent = formatCurrency(totalExpense);
 
   if (!entries.length) {
     donutEl.style.setProperty(
@@ -187,6 +234,8 @@ function updateChart() {
     .sort((a, b) => b.amount - a.amount)
     .forEach((entry) => {
       const li = document.createElement("li");
+      const amountText = formatCurrency(entry.amount, { sign: "negative" });
+
       li.innerHTML = `
         <div class="meta">
           <span class="icon" style="background:${entry.color}">${entry.icon}</span>
@@ -195,17 +244,62 @@ function updateChart() {
             <small>${((entry.amount / totalExpense) * 100).toFixed(0)}%</small>
           </div>
         </div>
-        <span class="amount expense">-$${formatCurrency(entry.amount)}</span>
+        <span class="amount expense">${amountText}</span>
       `;
       legendEl.appendChild(li);
     });
 }
 
-function formatCurrency(value) {
-  return Number(value).toLocaleString("en-US", {
+function setCurrency(key, options = {}) {
+  if (!currencyOptions[key]) return;
+  currentCurrencyKey = key;
+  currentCurrency = currencyOptions[key];
+  currencyFormatter = createCurrencyFormatter(currentCurrency);
+
+  if (!options.skipPersist) {
+    localStorage.setItem(CURRENCY_KEY, key);
+  }
+
+  if (currencySelect && currencySelect.value !== key) {
+    currencySelect.value = key;
+  }
+
+  if (!options.skipRender) {
+    refreshUI();
+  }
+}
+
+function createCurrencyFormatter(meta) {
+  return new Intl.NumberFormat(meta.locale, {
+    style: "currency",
+    currency: meta.currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+function convertToSelected(value) {
+  return value * currentCurrency.rate;
+}
+
+function convertToBase(value) {
+  return value / currentCurrency.rate;
+}
+
+function formatCurrency(value, { sign } = {}) {
+  const converted = convertToSelected(value);
+  const absolute = Math.abs(converted);
+  const absoluteFormatted = currencyFormatter.format(absolute);
+
+  if (sign === "positive") {
+    return `+${absoluteFormatted}`;
+  }
+
+  if (sign === "negative") {
+    return `-${absoluteFormatted}`;
+  }
+
+  return currencyFormatter.format(converted);
 }
 
 function formatDate(value) {
